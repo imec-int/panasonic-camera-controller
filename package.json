@@ -1,0 +1,24 @@
+{
+  "name": "panasonic-camera-controller",
+  "description": "Node.js library to control Panasonic camera's like the AW-HE50S PT Camera",
+  "version": "0.0.1",
+  "author": {
+    "name": "Sam Decrock",
+    "url": "https://github.com/SamDecrock/"
+  },
+  "bugs": {
+    "url": "https://github.com/mixbe/panasonic-camera-controller/issues"
+  },
+  "engines": { "node": ">= 0.8.0" },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mixbe/panasonic-camera-controller.git"
+  },
+  "main": "./camera-controller.js",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/mit-license.php"
+    }
+  ]
+}
