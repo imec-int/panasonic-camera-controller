@@ -3,6 +3,27 @@ panasonic-camera-controller
 
 Node.js library to control Panasonic camera's like the AW-HE50S PT Camera
 
+## Data protocol
+
+There are 2 kinds of commands: __camera commands__ and __P/T commands__. Camera commands can be used to change things related camera settings (auto focus, brightness, ...) whereas P/T commands are used to pan and tilt the camera.
+
+### P/T commands
+
+P/T commands are called using 
+
+    http://[ip]/cgi-bin/aw_ptz?cmd=[PT Command]&res=[Response Type]
+
+__[PT Command]__ are described from page 6 to page 31 in the protocol speficications.
+
+__[Response Type]__ can be __0__ or __1__. Giving you a HTTP response or not.
+
+### Camera commands
+
+    http://[ip]/cgi-bin/aw_cam?cmd=[Camera Command]&res=[Response Type]
+
+__[Camera Command]__ are described from page 32 to page 37 in the protocol speficications.
+
+__[Response Type]__ can be __0__ or __1__. Giving you a HTTP response or not.
 
 ## Raw data protocol
 
