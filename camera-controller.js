@@ -24,6 +24,7 @@ SOFTWARE.
 
 var httpreq = require('httpreq');
 var sprintf = require('sprintf').sprintf;
+var commands = require('./commands');
 
 function Camera(ip) {
 	this.ip = ip;
@@ -39,8 +40,13 @@ function getBaseUrl (ip) {
  * moveToPreset(presetnumber, [callback])
  */
 Camera.prototype.moveToPreset = function (presetnumber, callback) {
+	// #R[Data]
 	var cmd = '#R' + sprintf("%02d", (presetnumber-1) );
+	this.sendPtCommand(cmd, callback);
+};
 
+Camera.prototype.sendPtCommand = function (cmd, callback) {
+	console.log("sending " + cmd);
 	httpreq.get( getBaseUrl(this.ip) + 'aw_ptz' , {
 		parameters:{
 			cmd: cmd,
@@ -49,9 +55,41 @@ Camera.prototype.moveToPreset = function (presetnumber, callback) {
 	}, function (err, res) {
 		if(!callback) return;
 		if(err) return callback(err);
-		return callback(null, res.body);
+		return callback(null, parseResponse(res.body));
 	});
 };
 
+Camera.prototype.sendCameraCommand = function (cmd, callback) {
+	console.log("sending " + cmd);
+	httpreq.get( getBaseUrl(this.ip) + 'aw_cam' , {
+		parameters:{
+			cmd: cmd,
+			res: 1
+		}
+	}, function (err, res) {
+		if(!callback) return;
+		if(err) return callback(err);
+		return callback(null, parseResponse(res.body));
+	});
+};
+
+function parseResponse (response) {
+	for (var i = commands.length - 1; i >= 0; i--) {
+		var matchregex = commands[i].commands.response;
+		if(!matchregex) continue;
+
+		matchregex = matchregex.replace(/\[Data(\d+)?\]/ig, "(.+)");
+		matchregex = '^' + matchregex + '$';
+
+		var match = response.match(new RegExp(matchregex, 'i'));
+		if(match){
+			return match;
+		}
+	};
+
+	return response;
+}
+
+exports.commands = commands;
 exports.Camera = Camera;
 
