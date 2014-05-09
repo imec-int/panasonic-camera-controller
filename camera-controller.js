@@ -95,20 +95,61 @@ Camera.prototype.sendCameraCommand = function (cmd, callback) {
 };
 
 function parseResponse (response) {
+	// console.log(response);
+	var outputdata = null;
+
 	for (var i = commands.length - 1; i >= 0; i--) {
-		var matchregex = commands[i].commands.response;
-		if(!matchregex) continue;
+		var cmd = commands[i];
+		var responseFormat = cmd.commands.response;
+		if(!responseFormat) continue;
 
-		matchregex = matchregex.replace(/\[Data(\d+)?\]/ig, "(.+)");
+		var matchregex = responseFormat.replace(/\[Data(\d+)?\]/ig, "(.+)");
 		matchregex = '^' + matchregex + '$';
-
 		var match = response.match(new RegExp(matchregex, 'i'));
-		if(match){
-			return match;
+		if(!match) continue;
+
+
+
+
+		// console.log('found matching responseFormat', responseFormat);
+
+
+		// first check the number of [DataX] occurrences:
+		var data_occurrences = responseFormat.match(/\[Data(\d+)?\]/g);
+
+		var responseRegex = responseFormat;
+
+		// now loop over each [DataX] occurrence to extract the matching response:
+		for (var i = 0; i < data_occurrences.length; i++) {
+			var data_occurrence = data_occurrences[i];
+
+
+			if(data_occurrences.length > 1)
+				responseRegex = responseRegex.replace(data_occurrence, "(\.{4})?"); //un-hardcode this !! (if there are more than 1 [Data]-elements, first find the number of characters a [DataX]-element has)
+			else
+				responseRegex = responseRegex.replace(data_occurrence, "(\.+)");
+		};
+
+		responseRegex = '^' + responseRegex + '$';
+
+		// console.log(responseRegex);
+
+		var match = response.match(new RegExp(matchregex));
+		outputdata = {};
+		if(match && match[1]){
+			for (var i = 0; i < data_occurrences.length; i++) {
+				var data_occurrence = data_occurrences[i];
+
+				var code = match[i+1];
+
+				var code_text = cmd.values[data_occurrence][code];
+
+				outputdata[data_occurrence] = {code: code, code_text: code_text};
+			};
 		}
 	};
 
-	return response;
+	return outputdata;
 }
 
 exports.commands = commands;
