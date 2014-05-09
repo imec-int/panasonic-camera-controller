@@ -45,6 +45,27 @@ Camera.prototype.moveToPreset = function (presetnumber, callback) {
 	this.sendPtCommand(cmd, callback);
 };
 
+Camera.prototype.pantiltAbsolute = function (panDegrees, tiltDegrees, callback) {
+	var pan = parseInt(panDegrees) + 180;
+	pan = pan/(180+180)*0xFFFF;
+	pan = Math.round(pan);
+
+	var tilt = parseInt(tiltDegrees) + 90;
+	tilt = tilt/(90+90)*0xFFFF;
+	tilt = 0xFFFF - tilt;
+	tilt = Math.round(tilt);
+
+	pan = Math.min(pan, 0xFFFF);
+	pan = Math.max(pan, 0x0000);
+
+	tilt = Math.min(tilt, 0xFFFF);
+	tilt = Math.max(tilt, 0x0000);
+
+	// #APC[Data1][Data2]
+	var cmd = '#APC' + (sprintf("%04x", pan)).toUpperCase() + (sprintf("%04x", tilt)).toUpperCase();
+	this.sendPtCommand(cmd, callback);
+};
+
 Camera.prototype.sendPtCommand = function (cmd, callback) {
 	console.log("sending " + cmd);
 	httpreq.get( getBaseUrl(this.ip) + 'aw_ptz' , {
