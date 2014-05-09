@@ -77,8 +77,8 @@ module.exports = [
 		item: 'MENU',
 		commands: {
 			control: 'DUS:[Data]',
-			confirmation: 'QUS',
-			response: 'OUS:[Data]'
+			confirmation: 'DUS',
+			response: 'DUS:[Data]'
 		},
 		values:{
 			'[Data]':{
@@ -177,6 +177,21 @@ module.exports = [
 			'[Data]':{
 				'0': 'Disable',
 				'1': 'Enable'
+			}
+		}
+	},
+	{
+		type: 'pt',
+		item: 'Tally Control',
+		commands: {
+			control: '#DA[Data]',
+			confirmation: '#DA',
+			response: 'dA[Data]'
+		},
+		values:{
+			'[Data]':{
+				'0': 'OFF',
+				'1': 'ON'
 			}
 		}
 	},
