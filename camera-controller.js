@@ -95,62 +95,148 @@ Camera.prototype.sendCameraCommand = function (cmd, callback) {
 };
 
 function parseResponse (response) {
-	// console.log(response);
-	var outputdata = null;
+	var outputdata = {};
+
+	var cmdFound = false;
 
 	for (var i = commands.length - 1; i >= 0; i--) {
 		var cmd = commands[i];
-		var responseFormat = cmd.commands.response;
-		if(!responseFormat) continue;
 
-		var matchregex = responseFormat.replace(/\[Data(\d+)?\]/ig, "(.+)");
-		matchregex = '^' + matchregex + '$';
-		var match = response.match(new RegExp(matchregex, 'i'));
-		if(!match) continue;
+
+		var responseRegexes = createResponseRegexes(cmd);
+		if(!responseRegexes) continue; // if none, just skip to the next one
 
 
 
 
-		// console.log('found matching responseFormat', responseFormat);
+		for(var key in responseRegexes){
 
+			var responseRegex = responseRegexes[key];
 
-		// first check the number of [DataX] occurrences:
-		var data_occurrences = responseFormat.match(/\[Data(\d+)?\]/g);
-
-		var responseRegex = responseFormat;
-
-		// now loop over each [DataX] occurrence to extract the matching response:
-		for (var i = 0; i < data_occurrences.length; i++) {
-			var data_occurrence = data_occurrences[i];
-
-
-			if(data_occurrences.length > 1)
-				responseRegex = responseRegex.replace(data_occurrence, "(\.{4})?"); //un-hardcode this !! (if there are more than 1 [Data]-elements, first find the number of characters a [DataX]-element has)
-			else
-				responseRegex = responseRegex.replace(data_occurrence, "(\.+)");
-		};
-
-		responseRegex = '^' + responseRegex + '$';
-
-		// console.log(responseRegex);
-
-		var match = response.match(new RegExp(matchregex));
-		outputdata = {};
-		if(match && match[1]){
-			for (var i = 0; i < data_occurrences.length; i++) {
-				var data_occurrence = data_occurrences[i];
-
-				var code = match[i+1];
-
-				var code_text = cmd.values[data_occurrence][code];
-
-				outputdata[data_occurrence] = {code: code, code_text: code_text};
-			};
+			var match = response.match(responseRegex);
+			if(match && match[1]){
+				cmdFound = true;
+				outputdata[key] = {code: match[1], code_text: null};
+			}
 		}
+
+		if(cmdFound) break;
 	};
+
+
+	for(var key in outputdata){
+		outputdata[key].code_text = getHumanReadableResponse(cmd, key, outputdata[key].code);
+	}
 
 	return outputdata;
 }
+
+function createResponseRegexes (cmd) {
+	if(!cmd.commands.response) return null;
+
+
+	var regexPerValue = null;
+
+	for(var key in cmd.values){
+
+		var completeRegex = cmd.commands.response;
+
+		for(var key2 in cmd.values){
+			var regex = getRegexFromValue(cmd.values[key]);
+
+			if(key == key2){
+				regex = '('+regex+')';
+			}
+			completeRegex  = completeRegex.replace(key2, regex);
+		}
+
+		if(!regexPerValue) regexPerValue = {};
+		regexPerValue[key] = new RegExp(completeRegex, 'i');
+	}
+
+	return regexPerValue;
+}
+
+function getRegexFromValue (value) {
+	var stops;
+
+	if(value.type == 'range'){
+		stops = value.stops;
+	}else{
+		stops = value;
+	}
+
+	for(var stop in stops){
+		var lastChar = stop.substr(stop.length - 1);
+
+		var regex = "";
+		if(lastChar == 'h'){
+			for (var i = 0; i < stop.length-1; i++) {
+				regex += '[0-9a-f]';
+			};
+
+		}else{
+			for (var i = 0; i < stop.length; i++) {
+				regex += '[0-9]';
+			};
+		}
+		return regex;
+	}
+}
+
+function getHumanReadableResponse(cmd, key, responseCode){
+	var stops;
+
+	if(cmd.values[key].type == 'range'){
+		stops = cmd.values[key].stops;
+	}else{
+		stops = cmd.values[key];
+	}
+
+	var radix = 10;
+
+	var exact = null;
+	var lowValue = 0;
+	var lowText = '';
+	var highValue = Number.MAX_VALUE;
+	var highText = '';
+
+	for(var code in stops){
+		var text = stops[code];
+
+		var lastChar = code.substr(code.length - 1);
+		if(lastChar == 'h'){
+			radix = 16;
+			code = code.substr(0, code.length-1);
+		}
+
+		var value = parseInt(code, radix);
+		var responseValue = parseInt(responseCode, radix);
+
+		if(responseValue == value){
+			exact = text;
+			break;
+		}
+
+		if(responseValue > value && responseValue > lowValue){
+			lowValue = value;
+			lowText = text;
+		}
+
+		if(responseValue < value && responseValue < highValue){
+			highValue = value;
+			highText = text;
+		}
+	}
+
+	if(exact){
+		return exact;
+	}else{
+		return lowText + ' - ' + highText;
+	}
+}
+
+console.log( createResponseRegexes(commands[commands.length-1]) );
 
 exports.commands = commands;
 exports.Camera = Camera;
