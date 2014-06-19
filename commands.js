@@ -253,10 +253,77 @@ module.exports = [
 	},
 	{
 		type: 'pt',
+		item: 'Zoom Position Control',
+		commands: {
+			control: '#AXZ[Data]',
+			response: 'axz[Data]'
+		},
+		values:{
+			'[Data]':{
+				type: 'range',
+				stops: {
+					'555h': 'Wide',
+					'FFFh': 'Tele'
+				}
+			}
+		}
+	},
+	{
+		type: 'pt',
+		item: 'Zoom Position Control (absolute)',
+		commands: {
+			control: '#AYZ[Data]',
+			response: 'axz[Data]'
+		},
+		values:{
+			'[Data]':{
+				type: 'range',
+				stops: {
+					'001': 'Wide',
+					'999': 'Tele'
+				}
+			}
+		}
+	},
+	{
+		type: 'pt',
+		item: 'Iris Control',
+		commands: {
+			control: '#AXI[Data]',
+			response: 'axi[Data]'
+		},
+		values:{
+			'[Data]':{
+				type: 'range',
+				stops: {
+					'555h': 'Iris Close',
+					'FFFh': 'Iris Open'
+				}
+			}
+		}
+	},
+	{
+		type: 'pt',
+		item: 'Iris Control (absolute)',
+		commands: {
+			control: '#AYI[Data]',
+			response: 'axi[Data]'
+		},
+		values:{
+			'[Data]':{
+				type: 'range',
+				stops: {
+					'001': 'Iris Close',
+					'999': 'Iris Open'
+				}
+			}
+		}
+	},
+	{
+		type: 'pt',
 		item: 'Pan/Tilt Absolute Position Control',
 		commands: {
 			control: '#APC[Data1][Data2]',
-			confirmation: '#APC',
 			response: 'aPC[Data1][Data2]'
 		},
 		values:{
