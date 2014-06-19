@@ -76,7 +76,7 @@ Camera.prototype.sendPtCommand = function (cmd, callback) {
 	}, function (err, res) {
 		if(!callback) return;
 		if(err) return callback(err);
-		return callback(null, parseResponse(res.body));
+		return callback(null, parseOutput(res.body));
 	});
 };
 
@@ -90,11 +90,13 @@ Camera.prototype.sendCameraCommand = function (cmd, callback) {
 	}, function (err, res) {
 		if(!callback) return;
 		if(err) return callback(err);
-		return callback(null, parseResponse(res.body));
+		return callback(null, parseOutput(res.body));
 	});
 };
 
-function parseResponse (response) {
+function parseOutput (output) {
+	console.log('output', output);
+
 	var outputdata = {};
 
 	var cmdFound = false;
@@ -103,17 +105,15 @@ function parseResponse (response) {
 		var cmd = commands[i];
 
 
-		var responseRegexes = createResponseRegexes(cmd);
-		if(!responseRegexes) continue; // if none, just skip to the next one
+		var outputRegexes = createOutputRegexes(cmd);
+		if(!outputRegexes) continue; // if none, just skip to the next one
 
 
+		for(var key in outputRegexes){
 
+			var outputRegex = outputRegexes[key];
 
-		for(var key in responseRegexes){
-
-			var responseRegex = responseRegexes[key];
-
-			var match = response.match(responseRegex);
+			var match = output.match(outputRegex);
 			if(match && match[1]){
 				cmdFound = true;
 				outputdata[key] = {code: match[1], code_text: null};
@@ -125,21 +125,21 @@ function parseResponse (response) {
 
 
 	for(var key in outputdata){
-		outputdata[key].code_text = getHumanReadableResponse(cmd, key, outputdata[key].code);
+		outputdata[key].code_text = getHumanReadableOutput(cmd, key, outputdata[key].code);
 	}
 
 	return outputdata;
 }
 
-function createResponseRegexes (cmd) {
-	if(!cmd.commands.response) return null;
+function createOutputRegexes (cmd) {
+	if(!cmd.output) return null;
 
 
 	var regexPerValue = null;
 
 	for(var key in cmd.values){
 
-		var completeRegex = cmd.commands.response;
+		var completeRegex = cmd.output;
 
 		for(var key2 in cmd.values){
 			var regex = getRegexFromValue(cmd.values[key]);
@@ -158,25 +158,18 @@ function createResponseRegexes (cmd) {
 }
 
 function getRegexFromValue (value) {
-	var stops;
 
-	if(value.type == 'range'){
-		stops = value.stops;
-	}else{
-		stops = value;
-	}
-
-	for(var stop in stops){
-		var lastChar = stop.substr(stop.length - 1);
+	for(var code in value.codes){
+		var lastChar = code.substr(code.length - 1);
 
 		var regex = "";
 		if(lastChar == 'h'){
-			for (var i = 0; i < stop.length-1; i++) {
+			for (var i = 0; i < code.length-1; i++) {
 				regex += '[0-9a-f]';
 			};
 
 		}else{
-			for (var i = 0; i < stop.length; i++) {
+			for (var i = 0; i < code.length; i++) {
 				regex += '[0-9]';
 			};
 		}
@@ -184,14 +177,8 @@ function getRegexFromValue (value) {
 	}
 }
 
-function getHumanReadableResponse(cmd, key, responseCode){
-	var stops;
-
-	if(cmd.values[key].type == 'range'){
-		stops = cmd.values[key].stops;
-	}else{
-		stops = cmd.values[key];
-	}
+function getHumanReadableOutput(cmd, key, outputCode){
+	var codes = cmd.values[key].codes;
 
 	var radix = 10;
 
@@ -201,8 +188,8 @@ function getHumanReadableResponse(cmd, key, responseCode){
 	var highValue = Number.MAX_VALUE;
 	var highText = '';
 
-	for(var code in stops){
-		var text = stops[code];
+	for(var code in codes){
+		var codetext = codes[code];
 
 		var lastChar = code.substr(code.length - 1);
 		if(lastChar == 'h'){
@@ -211,21 +198,21 @@ function getHumanReadableResponse(cmd, key, responseCode){
 		}
 
 		var value = parseInt(code, radix);
-		var responseValue = parseInt(responseCode, radix);
+		var outputValue = parseInt(outputCode, radix);
 
-		if(responseValue == value){
-			exact = text;
+		if(outputValue == value){
+			exact = codetext;
 			break;
 		}
 
-		if(responseValue > value && responseValue > lowValue){
+		if(outputValue > value && outputValue > lowValue){
 			lowValue = value;
-			lowText = text;
+			lowText = codetext;
 		}
 
-		if(responseValue < value && responseValue < highValue){
+		if(outputValue < value && outputValue < highValue){
 			highValue = value;
-			highText = text;
+			highText = codetext;
 		}
 	}
 
@@ -236,7 +223,7 @@ function getHumanReadableResponse(cmd, key, responseCode){
 	}
 }
 
-console.log( createResponseRegexes(commands[commands.length-1]) );
+console.log( createOutputRegexes(commands[commands.length-1]) );
 
 exports.commands = commands;
 exports.Camera = Camera;
